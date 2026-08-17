@@ -1,0 +1,29 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.pytest_cache/
+*.pyc
+
+# SQLite DB + runtime storage
+backend/storage/anpr.db
+backend/storage/videos/*
+backend/storage/snapshots/*
+backend/storage/plates/*
+!backend/storage/**/.gitkeep
+
+# Model weights (see backend/models/README.md)
+backend/models/*.pt
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Env files
+.env
+.env.local
+*.env
+
+# OS
+.DS_Store

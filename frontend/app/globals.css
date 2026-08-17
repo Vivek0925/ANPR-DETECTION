@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --font-mono-tech: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-sans-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: #0a0d0b;
+  --color-panel: #101512;
+  --color-panel-raised: #151b17;
+  --color-line: #212a24;
+  --color-text: #dfe5e0;
+  --color-text-muted: #7d8a81;
+  --color-amber: #f2b441;
+  --color-amber-dim: #8a6a2c;
+  --color-green: #4ade80;
+  --color-red: #ef5350;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans-ui);
+}
+
+.font-tech {
+  font-family: var(--font-mono-tech);
+}
+
+/* Corner-bracket reticle, the signature motif: every detection / video
+   frame is framed like a targeting box, echoing the bounding boxes the
+   AI itself draws around plates. */
+.reticle {
+  position: relative;
+}
+.reticle::before,
+.reticle::after,
+.reticle > .rt-tl,
+.reticle > .rt-br {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: var(--color-amber);
+  opacity: 0.85;
+}
+.reticle::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid var(--color-amber);
+  border-left: 2px solid var(--color-amber);
+}
+.reticle::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 2px solid var(--color-amber);
+  border-right: 2px solid var(--color-amber);
+}
+.reticle > .rt-tl {
+  top: -1px;
+  right: -1px;
+  border-top: 2px solid var(--color-amber);
+  border-right: 2px solid var(--color-amber);
+}
+.reticle > .rt-br {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 2px solid var(--color-amber);
+  border-left: 2px solid var(--color-amber);
+}
+
+.scanline-bg {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.015) 0px,
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+::selection {
+  background: var(--color-amber);
+  color: #0a0d0b;
+}
+
+* {
+  scrollbar-color: var(--color-line) var(--color-bg);
+}
