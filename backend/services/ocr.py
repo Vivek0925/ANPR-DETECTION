@@ -9,7 +9,7 @@ Uses EasyOCR with:
 - Confidence scoring
 - Common OCR character correction
 """
-
+import os
 import re
 from collections import defaultdict
 
@@ -31,15 +31,22 @@ def get_reader():
     global _reader
 
     if _reader is None:
-        print("[OCR] Loading EasyOCR...")
+        print("[OCR] Loading EasyOCR from local models...")
+
+        ocr_model_dir = os.path.join(
+            config.MODELS_DIR,
+            "easyocr"
+        )
 
         _reader = easyocr.Reader(
             ["en"],
             gpu=False,
             verbose=False,
+            model_storage_directory=ocr_model_dir,
+            download_enabled=False,
         )
 
-        print("[OCR] EasyOCR loaded.")
+        print("[OCR] EasyOCR loaded from local models.")
 
     return _reader
 
