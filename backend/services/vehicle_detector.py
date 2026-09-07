@@ -15,11 +15,12 @@ class VehicleDetector:
         # ultralytics will auto-download yolov8n.pt if the path doesn't
         # exist AND it's a bare recognized name; if a real path is missing
         # we fail loudly instead of silently downloading something else.
-        if not os.path.exists(model_path) and not model_path.endswith("yolov8n.pt"):
-            raise FileNotFoundError(
-                f"Vehicle detection model not found at {model_path}. "
-                f"Set VEHICLE_MODEL_PATH or place yolov8n.pt in the models/ dir."
-            )
+        if not os.path.isfile(model_path):
+         raise FileNotFoundError(
+            f"Vehicle detection model not found at {model_path}. "
+            f"Place yolov8n.pt inside the backend/models/ directory "
+            f"or set VEHICLE_MODEL_PATH to a valid local .pt file."
+        )
         self.model = YOLO(model_path)
         self._lock = threading.Lock()
 
