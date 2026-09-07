@@ -576,13 +576,33 @@ def _save_detection(
     video_snapshot_dir,
     video_plate_dir,
 ):
+    """
+    Save every tracked vehicle event.
 
-    if not event.plate_number:
-        return False
+    recognized:
+        Plate successfully detected and read.
 
-    plate_slug = _sanitize_plate_for_filename(
-        event.plate_number
-    )
+    ocr_failed:
+        Plate was detected but OCR could not produce
+        a valid plate number.
+
+    no_plate:
+        No license plate was detected for this vehicle.
+    """
+
+    if event.plate_number:
+        plate_status = "recognized"
+        plate_slug = _sanitize_plate_for_filename(
+            event.plate_number
+        )
+
+    elif event.plate_observation_count > 0:
+        plate_status = "ocr_failed"
+        plate_slug = "ocr_failed"
+
+    else:
+        plate_status = "no_plate"
+        plate_slug = "no_plate"
 
     plate_crop_path = None
     snapshot_path = None
@@ -644,6 +664,8 @@ def _save_detection(
         video_id=video.id,
 
         plate_number=event.plate_number,
+
+        plate_status=plate_status,
 
         raw_ocr_text=event.raw_ocr_text,
 

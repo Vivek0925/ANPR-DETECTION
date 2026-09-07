@@ -131,13 +131,20 @@ class Detection(Base):
         "Video",
         back_populates="detections"
     )
-    
+
     __tablename__ = "detections"
 
     id = Column(Integer, primary_key=True, index=True)
     video_id = Column(Integer, ForeignKey("videos.id"), nullable=False)
 
-    plate_number = Column(String, nullable=False)       # normalized
+    plate_number = Column(String, nullable=True)
+
+    plate_status = Column(
+    String,
+    nullable=False,
+    default="recognized",
+)
+      # normalized
     raw_ocr_text = Column(String, nullable=True)
 
     timestamp_seconds = Column(Float, nullable=False)

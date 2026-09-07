@@ -57,3 +57,11 @@ def _migrate_additional_columns():
             connection.execute(
                 text("ALTER TABLE detections ADD COLUMN event_end_seconds FLOAT")
             )
+
+        if "plate_status" not in detection_columns:
+             connection.execute(
+        text(
+            "ALTER TABLE detections "
+            "ADD COLUMN plate_status VARCHAR DEFAULT 'recognized'"
+        )
+    )
