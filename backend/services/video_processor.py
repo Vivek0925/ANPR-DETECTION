@@ -1285,16 +1285,11 @@ def process_video(video_id: int):
             # =================================================
 
             for event in finalized_events:
-
-                # Don't save vehicles without plates.
-                if not event.plate_number:
-                    continue
-
-                # Reject garbage one last time.
-                if not _looks_like_plate(
+                if event.plate_number and not _looks_like_plate(
                     event.plate_number
                 ):
-                    continue
+                    event.plate_number = None
+                    event.raw_ocr_text = None
 
                 vehicle_events_detected += 1
 
@@ -1306,16 +1301,22 @@ def process_video(video_id: int):
                     video_plate_dir,
                 )
 
-                if saved:
+                if saved and event.plate_number:
                     plates_recognized += 1
 
                 db.commit()
 
+                event_time = format_timestamp(
+                    event.representative_timestamp_seconds
+                )
+
                 print(
-                    f"[DETECTION]"
-                    f" Plate={event.plate_number}"
-                    f" OCR={event.ocr_confidence:.2f}"
-                    f" Time={format_timestamp(event.representative_timestamp_seconds)}"
+                    f"[VEHICLE EVENT]"
+                    f" ID={event.track_id}"
+                    f" Plate={event.plate_number or 'N/A'}"
+                    f" Status="
+                    f"{'recognized' if event.plate_number else 'unreadable/no-plate'}"
+                    f" Time={event_time}"
                 )
 
             # =================================================
@@ -1391,13 +1392,15 @@ def process_video(video_id: int):
 
         for event in final_events:
 
-            if not event.plate_number:
-                continue
-
-            if not _looks_like_plate(
+            if event.plate_number and not _looks_like_plate(
                 event.plate_number
             ):
-                continue
+                event.plate_number = None
+                event.raw_ocr_text = None
+                event.plate_observation_count = max(
+                    event.plate_observation_count,
+                    1,
+                )
 
             vehicle_events_detected += 1
 
@@ -1409,15 +1412,15 @@ def process_video(video_id: int):
                 video_plate_dir,
             )
 
-            if saved:
+            if saved and event.plate_number:
                 plates_recognized += 1
 
             db.commit()
 
             print(
-                f"[FINAL DETECTION]"
-                f" Plate={event.plate_number}"
-                f" OCR={event.ocr_confidence:.2f}"
+                f"[FINAL VEHICLE EVENT]"
+                f" ID={event.track_id}"
+                f" Plate={event.plate_number or 'N/A'}"
             )
 
         # ====================================================
