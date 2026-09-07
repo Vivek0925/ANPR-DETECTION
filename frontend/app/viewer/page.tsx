@@ -4,13 +4,13 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import VideoViewer from "@/components/VideoViewer";
 import { getDetection } from "@/lib/api";
-import { DetectionOut } from "@/types";
+import type { Detection } from "@/types";
 
 function ViewerPageInner() {
   const params = useSearchParams();
   const detectionId = params.get("detection");
 
-  const [detection, setDetection] = useState<DetectionOut | null>(null);
+  const [detection, setDetection] = useState<Detection | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

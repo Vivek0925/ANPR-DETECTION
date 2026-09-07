@@ -1,73 +1,468 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import SearchBar from "@/components/SearchBar";
-import SearchResults from "@/components/SearchResults";
-import { searchPlate } from "@/lib/api";
-import { SearchResultOut } from "@/types";
+import {
+  FormEvent,
+  useState,
+} from "react";
 
-function SearchPageInner() {
-  const params = useSearchParams();
-  const router = useRouter();
-  const initial = params.get("plate") || "";
+import Link from "next/link";
 
-  const [result, setResult] = useState<SearchResultOut | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [searched, setSearched] = useState(false);
+import {
+  ArrowLeft,
+  CarFront,
+  Clock3,
+  Search,
+  ShieldCheck,
+  Video,
+} from "lucide-react";
 
-  const runSearch = async (plate: string) => {
-    setLoading(true);
-    setError(null);
-    router.replace(`/search?plate=${encodeURIComponent(plate)}`);
-    try {
-      const r = await searchPlate(plate);
-      setResult(r);
-      setSearched(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Search failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+import {
+  getMediaUrl,
+  searchPlate,
+} from "@/lib/api";
 
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-8">
-        <div className="font-tech text-xs tracking-[0.3em] text-[var(--color-amber)] uppercase mb-2">
-          Step 2 of 2
-        </div>
-        <h1 className="text-2xl font-semibold text-[var(--color-text)] mb-6">
-          Search a vehicle number
-        </h1>
-        <SearchBar initialValue={initial} onSearch={runSearch} loading={loading} />
-      </div>
+import type {
+  SearchResult,
+} from "@/types";
 
-      {error && (
-        <div className="border border-[var(--color-red)]/40 bg-[var(--color-red)]/5 rounded-md p-4 mb-6">
-          <p className="text-[var(--color-red)] font-tech text-sm">{error}</p>
-        </div>
-      )}
-
-      {searched && result && (
-        <SearchResults plateNumber={result.plate_number} results={result.results} />
-      )}
-
-      {!searched && !loading && (
-        <p className="text-sm text-[var(--color-text-muted)] font-tech">
-          Enter a registration number above, e.g.{" "}
-          <span className="text-[var(--color-amber)]">CG04AB1234</span>
-        </p>
-      )}
-    </div>
-  );
-}
 
 export default function SearchPage() {
+
+  const [query, setQuery] =
+    useState("");
+
+  const [result, setResult] =
+    useState<SearchResult | null>(
+      null
+    );
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+
+  async function handleSearch(
+    event: FormEvent
+  ) {
+
+    event.preventDefault();
+
+
+    const plate =
+      query.trim();
+
+
+    if (!plate) {
+
+      setError(
+        "Enter a license plate number."
+      );
+
+      return;
+    }
+
+
+    try {
+
+      setLoading(true);
+
+      setError("");
+
+      setResult(null);
+
+
+      const data =
+        await searchPlate(
+          plate
+        );
+
+
+      setResult(data);
+
+    } catch (err) {
+
+      console.error(err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Search failed."
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  }
+
+
   return (
-    <Suspense fallback={null}>
-      <SearchPageInner />
-    </Suspense>
+
+    <div className="app-shell">
+
+      <header className="header">
+
+        <Link
+          href="/"
+          className="logo"
+        >
+
+          <div className="logo-mark">
+
+            <ShieldCheck
+              size={21}
+            />
+
+          </div>
+
+          <div>
+
+            <strong>
+              CCTV / RETRIEVAL
+            </strong>
+
+            <span>
+              AI Vehicle Surveillance
+            </span>
+
+          </div>
+
+        </Link>
+
+
+        <nav className="main-nav">
+
+          <Link href="/">
+            Dashboard
+          </Link>
+
+          <Link href="/upload">
+            Upload
+          </Link>
+
+          <Link
+            href="/search"
+            className="active"
+          >
+            Search
+          </Link>
+
+          <Link href="/history">
+            History
+          </Link>
+
+        </nav>
+
+
+        <div className="header-status">
+
+          <span className="status-dot online" />
+
+          Backend
+
+        </div>
+
+      </header>
+
+
+      <main className="form-page">
+
+        <Link
+          href="/"
+          className="back-link"
+        >
+
+          <ArrowLeft size={16} />
+
+          Dashboard
+
+        </Link>
+
+
+        <div className="form-heading">
+
+          <p className="eyebrow">
+            PLATE SEARCH
+          </p>
+
+          <h1>
+            Search a license plate
+          </h1>
+
+          <p>
+            Find every detected occurrence
+            across your processed CCTV videos.
+          </p>
+
+        </div>
+
+
+        <form
+          className="search-form"
+          onSubmit={
+            handleSearch
+          }
+        >
+
+          <Search
+            size={20}
+          />
+
+          <input
+            value={query}
+            onChange={(event) =>
+              setQuery(
+                event.target.value
+              )
+            }
+            placeholder="Enter plate number..."
+          />
+
+
+          <button
+            type="submit"
+            className="green-button"
+            disabled={loading}
+          >
+
+            {loading
+              ? "Searching..."
+              : "Search"}
+
+          </button>
+
+        </form>
+
+
+        {error && (
+
+          <div className="error-message">
+
+            {error}
+
+          </div>
+
+        )}
+
+
+        {result && (
+
+          <section className="search-results">
+
+            <div className="results-summary">
+
+              <div>
+
+                <p>
+                  SEARCH RESULTS
+                </p>
+
+                <h2>
+                  {result.plate_number}
+                </h2>
+
+              </div>
+
+
+              <div className="result-count">
+
+                <strong>
+                  {
+                    result.total_appearances
+                  }
+                </strong>
+
+                <span>
+                  appearance
+                  {result.total_appearances !==
+                  1
+                    ? "s"
+                    : ""}
+                </span>
+
+              </div>
+
+            </div>
+
+
+            {result.results.length ===
+            0 ? (
+
+              <div className="empty-state large">
+
+                <Search
+                  size={28}
+                />
+
+                <strong>
+                  No matching plate found
+                </strong>
+
+                <span>
+                  This plate does not
+                  appear in the processed
+                  videos.
+                </span>
+
+              </div>
+
+            ) : (
+
+              <div className="result-list">
+
+                {result.results.map(
+                  (detection) => {
+
+                    const snapshot =
+                      getMediaUrl(
+                        detection
+                          .snapshot_url
+                      );
+
+
+                    return (
+
+                      <div
+                        className="result-card"
+                        key={
+                          detection.id
+                        }
+                      >
+
+                        <div className="result-image">
+
+                          {snapshot ? (
+
+                            <img
+                              src={
+                                snapshot
+                              }
+                              alt="Vehicle detection"
+                            />
+
+                          ) : (
+
+                            <CarFront
+                              size={35}
+                            />
+
+                          )}
+
+                        </div>
+
+
+                        <div className="result-info">
+
+                          <span className="plate-label">
+                            PLATE
+                          </span>
+
+                          <h3>
+
+                            {detection
+                              .plate_number ||
+                              detection
+                                .raw_ocr_text ||
+                              "Not recognized"}
+
+                          </h3>
+
+
+                          <div className="result-meta">
+
+                            <span>
+
+                              <CarFront
+                                size={15}
+                              />
+
+                              {
+                                detection
+                                  .vehicle_type ||
+                                "Vehicle"
+                              }
+
+                            </span>
+
+
+                            <span>
+
+                              <Clock3
+                                size={15}
+                              />
+
+                              {
+                                detection
+                                  .formatted_timestamp
+                              }
+
+                            </span>
+
+
+                            <span>
+
+                              <Video
+                                size={15}
+                              />
+
+                              {
+                                detection
+                                  .video_filename
+                              }
+
+                            </span>
+
+                          </div>
+
+                        </div>
+
+
+                        <div className="confidence">
+
+                          {detection
+                            .ocr_confidence !=
+                            null && (
+
+                            <>
+
+                              <span>
+                                OCR
+                              </span>
+
+                              <strong>
+                                {Math.round(
+                                  detection
+                                    .ocr_confidence
+                                )}
+                                %
+                              </strong>
+
+                            </>
+
+                          )}
+
+                        </div>
+
+                      </div>
+
+                    );
+                  }
+                )}
+
+              </div>
+
+            )}
+
+          </section>
+
+        )}
+
+      </main>
+
+    </div>
   );
 }

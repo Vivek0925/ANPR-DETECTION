@@ -1,12 +1,12 @@
 "use client";
 
-import { DetectionOut } from "@/types";
+import type { Detection } from "@/types";
 import { mediaUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 interface Props {
   plateNumber: string;
-  results: DetectionOut[];
+  results: Detection[];
 }
 
 export default function SearchResults({ plateNumber, results }: Props) {
@@ -36,7 +36,7 @@ export default function SearchResults({ plateNumber, results }: Props) {
 
       <div className="flex flex-col gap-3">
         {results.map((r) => {
-          const thumb = mediaUrl(r.snapshot_url) || mediaUrl(r.plate_crop_url);
+          const thumb = mediaUrl(r.snapshot_url) || mediaUrl(r.plate_crop_url) || undefined;
           return (
             <button
               key={r.id}

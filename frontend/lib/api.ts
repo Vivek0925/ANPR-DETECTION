@@ -1,74 +1,247 @@
-import {
-  VideoOut,
-  VideoStatusOut,
-  SearchResultOut,
-  DetectionOut,
+import type {
+  DashboardStats,
+  Detection,
+  SearchResult,
+  Video,
+  VideoStatus,
 } from "@/types";
 
-// The backend URL. Configure via NEXT_PUBLIC_API_BASE_URL in .env.local for
-// non-default setups; defaults to the local FastAPI dev server.
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8000";
 
-async function handle<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    let detail = res.statusText;
-    try {
-      const body = await res.json();
-      detail = body.detail || detail;
-    } catch {
-      // ignore
+
+async function request<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
+
+  const response = await fetch(
+    `${API_URL}${endpoint}`,
+    {
+      ...options,
+      cache: "no-store",
     }
-    throw new Error(detail);
+  );
+
+
+  if (!response.ok) {
+
+    let message =
+      `Request failed (${response.status})`;
+
+    try {
+
+      const data =
+        await response.json();
+
+      if (data?.detail) {
+        message = data.detail;
+      }
+
+    } catch {
+      // Keep default error.
+    }
+
+    throw new Error(message);
   }
-  return res.json();
+
+
+  return response.json();
 }
 
-export async function uploadVideo(file: File): Promise<VideoOut> {
-  const formData = new FormData();
-  formData.append("file", file);
-  const res = await fetch(`${API_BASE}/videos/upload`, {
-    method: "POST",
-    body: formData,
-  });
-  return handle<VideoOut>(res);
+
+/* ========================================================= */
+/* BACKEND HEALTH */
+/* ========================================================= */
+
+export async function checkBackend(): Promise<boolean> {
+
+  try {
+
+    await request("/");
+
+    return true;
+
+  } catch {
+
+    return false;
+  }
 }
 
-export async function startProcessing(videoId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/videos/${videoId}/process`, {
-    method: "POST",
-  });
-  await handle(res);
+
+/* ========================================================= */
+/* DASHBOARD */
+/* ========================================================= */
+
+export async function getDashboardStats() {
+
+  return request<DashboardStats>(
+    "/dashboard/stats"
+  );
 }
+
+
+export async function getRecentDetections(
+  limit = 6
+) {
+
+  return request<Detection[]>(
+    `/detections/recent?limit=${limit}`
+  );
+}
+
+export async function getDetection(
+  detectionId: number
+) {
+
+  return request<Detection>(
+    `/detections/${detectionId}`
+  );
+}
+
+
+/* ========================================================= */
+/* VIDEOS */
+/* ========================================================= */
+
+export async function getVideos() {
+
+  return request<Video[]>(
+    "/videos"
+  );
+}
+
+
+export async function getVideo(
+  videoId: number
+) {
+
+  return request<Video>(
+    `/videos/${videoId}`
+  );
+}
+
 
 export async function getVideoStatus(
   videoId: number
-): Promise<VideoStatusOut> {
-  const res = await fetch(`${API_BASE}/videos/${videoId}/status`);
-  return handle<VideoStatusOut>(res);
-}
+) {
 
-export async function listVideos(): Promise<VideoOut[]> {
-  const res = await fetch(`${API_BASE}/videos`);
-  return handle<VideoOut[]>(res);
-}
-
-export async function searchPlate(plate: string): Promise<SearchResultOut> {
-  const res = await fetch(
-    `${API_BASE}/search?plate=${encodeURIComponent(plate)}`
+  return request<VideoStatus>(
+    `/videos/${videoId}/status`
   );
-  return handle<SearchResultOut>(res);
 }
 
-export async function getDetection(id: number): Promise<DetectionOut> {
-  const res = await fetch(`${API_BASE}/detections/${id}`);
-  return handle<DetectionOut>(res);
+
+/* ========================================================= */
+/* UPLOAD */
+/* ========================================================= */
+
+export async function uploadVideo(
+  file: File
+): Promise<Video> {
+
+  const formData =
+    new FormData();
+
+  formData.append(
+    "file",
+    file
+  );
+
+
+  const response =
+    await fetch(
+      `${API_URL}/videos/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+
+  if (!response.ok) {
+
+    let message =
+      "Video upload failed.";
+
+    try {
+
+      const data =
+        await response.json();
+
+      if (data?.detail) {
+        message = data.detail;
+      }
+
+    } catch {
+      // Ignore JSON parsing error.
+    }
+
+    throw new Error(message);
+  }
+
+
+  return response.json();
 }
 
-export function mediaUrl(path: string | null): string | null {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  return `${API_BASE}${path}`;
+
+/* ========================================================= */
+/* PROCESS VIDEO */
+/* ========================================================= */
+
+export async function processVideo(
+  videoId: number
+) {
+
+  return request(
+    `/videos/${videoId}/process`,
+    {
+      method: "POST",
+    }
+  );
 }
 
-export { API_BASE };
+
+/* ========================================================= */
+/* SEARCH */
+/* ========================================================= */
+
+export async function searchPlate(
+  plate: string
+) {
+
+  return request<SearchResult>(
+    `/search?plate=${encodeURIComponent(
+      plate
+    )}`
+  );
+}
+
+
+/* ========================================================= */
+/* MEDIA URL */
+/* ========================================================= */
+
+export function getMediaUrl(
+  path: string | null
+) {
+
+  if (!path) {
+    return null;
+  }
+
+
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://")
+  ) {
+
+    return path;
+  }
+
+
+  return `${API_URL}${path}`;
+}
+
+export const mediaUrl = getMediaUrl;

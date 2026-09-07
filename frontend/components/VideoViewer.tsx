@@ -2,11 +2,11 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { DetectionOut } from "@/types";
+import type { Detection } from "@/types";
 import { mediaUrl } from "@/lib/api";
 
 interface Props {
-  detection: DetectionOut;
+  detection: Detection;
 }
 
 export default function VideoViewer({ detection }: Props) {
@@ -88,8 +88,8 @@ function VideoViewerInner({ detection }: Props) {
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={mediaUrl(detection.plate_crop_url)!}
-                alt={detection.plate_number}
+                src={mediaUrl(detection.plate_crop_url) ?? undefined}
+                alt={detection.plate_number ?? "Plate snapshot"}
                 className="w-full rounded border border-[var(--color-line)]"
               />
             </div>
