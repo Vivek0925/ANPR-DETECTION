@@ -47,6 +47,94 @@ class Detection(Base):
     __tablename__ = "detections"
 
     id = Column(Integer, primary_key=True, index=True)
+
+    video_id = Column(
+        Integer,
+        ForeignKey("videos.id"),
+        nullable=False
+    )
+
+    # Can be NULL when the vehicle has no detectable/readable plate
+    plate_number = Column(
+        String,
+        nullable=True
+    )
+
+    # recognized | no_plate | ocr_failed
+    plate_status = Column(
+        String,
+        nullable=False,
+        default="recognized"
+    )
+
+    raw_ocr_text = Column(
+        String,
+        nullable=True
+    )
+
+    timestamp_seconds = Column(
+        Float,
+        nullable=False
+    )
+
+    frame_number = Column(
+        Integer,
+        nullable=False
+    )
+
+    track_id = Column(
+        Integer,
+        nullable=True
+    )
+
+    event_start_seconds = Column(
+        Float,
+        nullable=True
+    )
+
+    event_end_seconds = Column(
+        Float,
+        nullable=True
+    )
+
+    vehicle_type = Column(
+        String,
+        nullable=True
+    )
+
+    ocr_confidence = Column(
+        Float,
+        nullable=True
+    )
+
+    detection_confidence = Column(
+        Float,
+        nullable=True
+    )
+
+    snapshot_path = Column(
+        String,
+        nullable=True
+    )
+
+    plate_crop_path = Column(
+        String,
+        nullable=True
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    video = relationship(
+        "Video",
+        back_populates="detections"
+    )
+    
+    __tablename__ = "detections"
+
+    id = Column(Integer, primary_key=True, index=True)
     video_id = Column(Integer, ForeignKey("videos.id"), nullable=False)
 
     plate_number = Column(String, nullable=False)       # normalized
