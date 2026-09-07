@@ -894,6 +894,12 @@ def process_video(video_id: int):
         # Last OCR time per vehicle.
         last_ocr_time_by_track = {}
 
+        # Number of license plates detected for each tracked vehicle.
+        # This is intentionally separate from successful OCR observations:
+        # a detected plate with failed OCR must become `ocr_failed`,
+        # while a vehicle with no detected plate becomes `no_plate`.
+        plate_detected_by_track = defaultdict(int)
+
         # ====================================================
         # COUNTERS
         # ====================================================
@@ -1109,6 +1115,11 @@ def process_video(video_id: int):
 
                 track_id = vehicle.track_id
 
+                # The plate detector found a plate belonging to this vehicle.
+                # Count it even if OCR is skipped/fails.
+                if track_id is not None:
+                    plate_detected_by_track[track_id] += 1
+
                 # =================================================
                 # OCR COOLDOWN
                 # =================================================
@@ -1291,6 +1302,15 @@ def process_video(video_id: int):
                     event.plate_number = None
                     event.raw_ocr_text = None
 
+                # If a plate was detected for this tracked vehicle but no
+                # valid OCR result survived, classify the event as OCR failed.
+                # Existing successful OCR observations are preserved.
+                if event.track_id is not None:
+                    event.plate_observation_count = max(
+                        event.plate_observation_count,
+                        plate_detected_by_track.get(event.track_id, 0),
+                    )
+
                 vehicle_events_detected += 1
 
                 saved = _save_detection(
@@ -1315,7 +1335,7 @@ def process_video(video_id: int):
                     f" ID={event.track_id}"
                     f" Plate={event.plate_number or 'N/A'}"
                     f" Status="
-                    f"{'recognized' if event.plate_number else 'unreadable/no-plate'}"
+                    f"{'recognized' if event.plate_number else ('ocr_failed' if event.plate_observation_count > 0 else 'no_plate')}"
                     f" Time={event_time}"
                 )
 
@@ -1397,9 +1417,14 @@ def process_video(video_id: int):
             ):
                 event.plate_number = None
                 event.raw_ocr_text = None
+
+            # Preserve the distinction between:
+            #   no_plate   -> plate detector found nothing
+            #   ocr_failed -> plate detector found a plate, OCR failed
+            if event.track_id is not None:
                 event.plate_observation_count = max(
                     event.plate_observation_count,
-                    1,
+                    plate_detected_by_track.get(event.track_id, 0),
                 )
 
             vehicle_events_detected += 1
@@ -1417,10 +1442,21 @@ def process_video(video_id: int):
 
             db.commit()
 
+            final_status = (
+                "recognized"
+                if event.plate_number
+                else (
+                    "ocr_failed"
+                    if event.plate_observation_count > 0
+                    else "no_plate"
+                )
+            )
+
             print(
                 f"[FINAL VEHICLE EVENT]"
                 f" ID={event.track_id}"
                 f" Plate={event.plate_number or 'N/A'}"
+                f" Status={final_status}"
             )
 
         # ====================================================
